@@ -1,3 +1,4 @@
 *.pileup.tab
 R/.Rproj.user/
 references/
+.Rhistory
