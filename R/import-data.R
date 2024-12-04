@@ -195,6 +195,9 @@ rm(long_ww_lin_3, aliases, alias_vector)
 #Import table of names:
 named_variants <- read.csv("../input/named_variants.csv")
 
+##TO DO: get the variant names to not include "NA" in the pasted string!
+#unite(named_variants[2:3], "name_plus_alias", sep = " \\/ ", na.rm = TRUE)
+
 #Default to "other" (unnamed variants will keep this designation):
 long_ww_lin_w_sample_info$named_variant_id <- "other"
 
