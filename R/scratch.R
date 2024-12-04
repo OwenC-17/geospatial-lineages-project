@@ -7,3 +7,8 @@ long_ww_chicago <- filter(long_ww_lin_w_sample_info,
 
 #list_of_others <- as.data.frame(table(filter(long_ww_lin_w_sample_info, named_variant_id == "other")$full_lineage_id))
 
+without_date <- filter(long_ww_lin_w_sample_info, is.na(sample_collect_date))
+has_date <- filter(long_ww_lin_w_sample_info, !is.na(sample_collect_date))
+
+sum(!unique(without_date$sample_id) %in% unique(has_date$sample_id))
+unique(without_date$sample_id)
