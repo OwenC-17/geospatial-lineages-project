@@ -1,3 +1,7 @@
+###This script is used to import raw data (downloaded from the LIMS), clean, and
+###format it. Any modifications to the data that take place BEFORE analysis go
+###here. 
+
 library("tidyverse")
 library("zoo")
 
