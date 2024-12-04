@@ -106,24 +106,46 @@ rm(long_ww_lin, sample_metadata, wwtp_names_dictionary)
 #Make a column specifically for unedited lineages (they will be edited soon)
 long_ww_lin_w_sample_info$full_lineage_id <- long_ww_lin_w_sample_info$linvec
 
-#Separate lineages by dots (this will generate a warning. It is okay.)
-long_ww_lin_w_sample_info <- long_ww_lin_w_sample_info %>%
-  separate(full_lineage_id,
-           paste0("name",
-                  seq_len(str_count(long_ww_lin_w_sample_info$full_lineage_id, "\\.")
-                          + 1)),
-           sep = "\\.", remove = FALSE)
 
+#Not currently using (use str_split to get lineage_components instead):
+#Separate lineages by dots (this will generate a warning. It is okay.)
+#long_ww_lin_w_sample_info <- long_ww_lin_w_sample_info %>%
+#  separate(full_lineage_id,
+#           paste0("name",
+#                  seq_len(str_count(long_ww_lin_w_sample_info$full_lineage_id, "\\.")
+#                          + 1)),
+#           sep = "\\.", remove = FALSE)
+
+lineage_components <- (str_split(long_ww_lin_w_sample_info$full_lineage_id, "\\.",simplify = TRUE))
+
+lineage_components[lineage_components == ""] <- NA
+
+lineage_components <- base::apply(data.frame(lineage_components), 2, FUN = str_replace, pattern = "^$", replacement = NA)
+
+long_ww_lin_w_sample_info <- long_ww_lin_w_sample_info %>%
+  mutate(top_lin_id = lineage_components[,1],
+         sub1 = lineage_components[,2],
+         sub2 = lineage_components[,3],
+         sub3 = lineage_components[,4])
+
+#This is just to confirm that the separate lineages combine properly (should
+#return 0).
+sum(unite(long_ww_lin_w_sample_info[,22:25], 
+          "combined", sep = ".", na.rm = TRUE)
+    != long_ww_lin_w_sample_info$full_lineage_id)
+
+
+#Not using but may need for other functions, keep until confirmed unneeded:
 #Create column with lineages only up to fist nested number:
-long_ww_lin_w_sample_info$t2lin <- paste(long_ww_lin_w_sample_info$name1,
-                                         long_ww_lin_w_sample_info$name2,
-                                         "x",
-                                         sep = ".")
+#long_ww_lin_w_sample_info$t2lin <- paste(long_ww_lin_w_sample_info$name1,
+#                                         long_ww_lin_w_sample_info$name2,
+#                                         "x",
+#                                         sep = ".")
 
 ###Some lineages have more than one name. The following code makes them
 ###consistent.
 
-#Lineage notes from cov-lineages/pango-designation on Github:
+#Lineage notes from cov-lineages/pango-designation on Github (ignore parsing warning):
 lineage_notes <- read_table("../input/lineage_notes.txt", skip = 1,
                             col_names = FALSE)
 
@@ -206,12 +228,6 @@ for (x in seq_len(nrow(long_ww_lin_w_sample_info))) {
 
 ###Export formatted data as csv
 ################################################################################
-
-#Select data for export:
-sequencing_results_formatted_cleaned <- long_ww_lin_w_sample_info %>%
-  select(abvec:full_lineage_id, aliases_removed, named_variant_id)
-
-#Do the export:
-write_csv(sequencing_results_formatted_cleaned,
+write_csv(long_ww_lin_w_sample_info,
           "../cleaned-formatted-data/sequencing-results-formatted-cleaned.csv",
           progress = TRUE, num_threads = 3)
