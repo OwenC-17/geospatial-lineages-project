@@ -1,23 +1,24 @@
-ww_lin_data <- read_csv("../../ClinicalVsWW/ww_lineages_and_metadata_complete.csv",col_names = TRUE) %>%
-  mutate_at(.vars = "sample_arrival_temp", .funs = gsub, #mutate_at allows selecting a column instead of making a new one 
-            pattern = "\\.{2}|,", replacement = "\\.")  %>%
-  mutate(weeks_to_add = ((year - 2021) * 52)) %>%
-  mutate(weeks_since_start = week + weeks_to_add)
+library(tidyverse)
+library(sf)
+library(tmap)
 
-ww_lin_data2 <- read_csv("../cleaned-formatted-data/sequencing-results-formatted-cleaned.csv",col_names = TRUE) %>%
-  mutate_at(.vars = "sample_arrival_temp", .funs = gsub, #mutate_at allows selecting a column instead of making a new one 
-            pattern = "\\.{2}|,", replacement = "\\.")  %>%
-  mutate(weeks_to_add = ((year - 2021) * 52)) %>%
-  mutate(weeks_since_start = week + weeks_to_add)
-
+ww_lin_data <- read_csv("../cleaned-formatted-data/sequencing-results-formatted-cleaned.csv", col_names = TRUE) 
+#Later: must check sample_arrival_temp data not being erased. 
 
 idph_ww_lin_data <- ww_lin_data %>%
   filter(sample_id != 19656) %>%
   right_join(idph_sf, by = "wwtp_name")
 
+#Just a map of the locations without other data (for reference)
+tm_shape(IL) + tm_polygons(alpha = 0.2) +
+  tm_shape(leading_wwtps_no_singletons) + tm_dots(col = "cyan3", size = 0.5) +
+  tm_layout(main.title = "WWTP locations") + tm_scale_bar(breaks = c(0, 50, 100), text.size = .8, position = c("left", "bottom"))
+
+
+#NOTE: If a lineage appeared in two sites at once, both are counted!
 first_appearances_by_lin <- idph_ww_lin_data %>%
-  group_by(long_lineage_id) %>%
-  filter(sample_collect_date == min(sample_collect_date)) %>%
+  group_by(aliases_removed) %>%
+  filter(weeks_since_start == min(weeks_since_start)) %>%
   distinct()
 
 leading_wwtps <- first_appearances_by_lin %>%
@@ -29,8 +30,8 @@ leading_wwtps <- first_appearances_by_lin %>%
 tm_shape(IL) + tm_polygons(alpha = 0.2) +
   tm_shape(leading_wwtps) + tm_dots(col = "red", size = "num_first")
 
-num_appearances <- first_appearances_by_lin %>%
-  group_by(long_lineage_id) %>%
+num_appearances <- ww_lin_data %>%
+  group_by(aliases_removed) %>%
   summarize(nappearances = n())
 
 singletons <- num_appearances %>%
@@ -43,7 +44,7 @@ tripletons <- num_appearances %>%
   filter(nappearances <= 3)
 
 leading_wwtps_no_singletons <- first_appearances_by_lin %>%
-  filter(!(long_lineage_id %in% singletons$long_lineage_id)) %>%
+  filter(!(aliases_removed %in% singletons$aliases_removed)) %>%
   group_by(wwtp_name) %>%
   summarize(num_first = n()) %>%
   left_join(idph_sf, by = "wwtp_name") %>%
@@ -52,22 +53,17 @@ leading_wwtps_no_singletons <- first_appearances_by_lin %>%
 tm_shape(IL) + tm_polygons(alpha = 0.2) +
   tm_shape(leading_wwtps_no_singletons) + tm_dots(col = "red", size = "num_first")
 
-
-tm_shape(IL) + tm_polygons(alpha = 0.2) +
-  tm_shape(leading_wwtps_no_singletons) + tm_dots(col = "cyan3", size = 0.5) +
-  tm_layout(main.title = "WWTP locations") + tm_scale_bar(breaks = c(0, 50, 100), text.size = .8, position = c("left", "bottom"))
-
 ######
 
 leading_wwtps_no_doubletons <- first_appearances_by_lin %>%
-  filter(!(long_lineage_id %in% doubletons$long_lineage_id)) %>%
+  filter(!(aliases_removed %in% doubletons$aliases_removed)) %>%
   group_by(wwtp_name) %>%
   summarize(num_first = n()) %>%
   left_join(idph_sf, by = "wwtp_name") %>%
   st_as_sf()
 
 leading_wwtps_no_tripletons <- first_appearances_by_lin %>%
-  filter(!(long_lineage_id %in% tripletons$long_lineage_id)) %>%
+  filter(!(aliases_removed %in% tripletons$aliases_removed)) %>%
   group_by(wwtp_name) %>%
   summarize(num_first = n()) %>%
   left_join(idph_sf, by = "wwtp_name") %>%
@@ -105,12 +101,12 @@ pop_first_model <- lm(log(num_first) ~ log(population_served), data = leading_ww
 summary(pop_first_model)
 plot(pop_first_model)
 
+###Looking at Named Variants (VOCs, VOIs, & VUMs)
+
 first_appearances_by_voc <- idph_ww_lin_data %>%
-  group_by(voc_id) %>%
-  filter(sample_collect_date == min(sample_collect_date)) %>%
-  group_by(voc_id, wwtp_name, sample_collect_date) %>%
-  summarize(voc_abund = sum(abvec)) %>%
-  left_join(idph_sf, by = "wwtp_name") %>%
+  group_by(named_variant_id) %>%
+  filter(weeks_since_start == min(weeks_since_start)) %>%
+  right_join(idph_sf, by = "wwtp_name") %>%
   st_as_sf()
 
 leading_wwtps_voc <- first_appearances_by_voc %>%
@@ -126,7 +122,7 @@ tm_shape(IL) + tm_polygons(alpha = 0.2) +
 
 tm_shape(IL) + tm_polygons(alpha = 0.2) +
   tm_shape(first_appearances_by_voc) + tm_dots(col = "population_served", palette = "viridis", size = 1) +
-  tm_facets(along = "voc_id", free.coords = FALSE) +
+  tm_facets(along = "named_variant_id", free.coords = FALSE) +
   tm_layout(main.title = "Locations of first appearance") +
   tm_text(text = "sample_collect_date")
 
