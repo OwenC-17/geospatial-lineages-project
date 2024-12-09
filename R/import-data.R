@@ -124,7 +124,7 @@ lineage_components <- (str_split(long_ww_lin_w_sample_info$full_lineage_id, "\\.
 
 lineage_components[lineage_components == ""] <- NA
 
-lineage_components <- base::apply(data.frame(lineage_components), 2, FUN = str_replace, pattern = "^$", replacement = NA)
+lineage_components <- base::apply(data.frame(lineage_components), 2, FUN = str_replace, pattern = "^$", replacement = as.character(NA))
 
 long_ww_lin_w_sample_info <- long_ww_lin_w_sample_info %>%
   mutate(top_lin_id = lineage_components[,1],
