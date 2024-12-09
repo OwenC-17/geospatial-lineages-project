@@ -1,3 +1,8 @@
+###This script find first samples to detect new lineages and creates plots
+###of the locations of these samples. 
+###If data has been imported and cleaned using import-data.R, this script
+###should run independently. 
+
 library(tidyverse)
 library(sf)
 library(tmap)
@@ -30,7 +35,7 @@ leading_wwtps <- first_appearances_by_lin %>%
 tm_shape(IL) + tm_polygons(alpha = 0.2) +
   tm_shape(leading_wwtps) + tm_dots(col = "red", size = "num_first")
 
-num_appearances <- ww_lin_data %>%
+num_appearances <- idph_ww_lin_data %>%
   group_by(aliases_removed) %>%
   summarize(nappearances = n())
 
@@ -59,7 +64,7 @@ leading_wwtps_no_doubletons <- first_appearances_by_lin %>%
   filter(!(aliases_removed %in% doubletons$aliases_removed)) %>%
   group_by(wwtp_name) %>%
   summarize(num_first = n()) %>%
-  _join(idph_sf, by = "wwtp_name") %>%
+  left_join(idph_sf, by = "wwtp_name") %>%
   st_as_sf()
 
 leading_wwtps_no_tripletons <- first_appearances_by_lin %>%
@@ -73,22 +78,30 @@ leading_wwtps_no_tripletons <- first_appearances_by_lin %>%
 ################
 
 all_lineages = tm_shape(IL) + tm_polygons(alpha = 0.2) +
-  tm_shape(leading_wwtps) + tm_dots(col = "population_served", palette = "viridis", size = "num_first") +
-  tm_layout(main.title = "No restriction")
+  tm_shape(leading_wwtps) + tm_dots(col = "log10_pop", breaks = c(3.0, 4.0, 5.0, 6.0, 7.0), palette = "viridis", size = "num_first") +
+  tm_layout(main.title = "First detections\n(all lineages)", legend.outside = TRUE, main.title.size = 1.2)
+
+all_lineages  
 
 no_singletons = tm_shape(IL) + tm_polygons(alpha = 0.2) +
-  tm_shape(leading_wwtps_no_singletons) + tm_dots(col = "population_served", palette = "viridis", size = "num_first") +
-  tm_layout(main.title = "> 1 appearances")
+  tm_shape(leading_wwtps_no_singletons) + tm_dots(col = "log10_pop", breaks = c(3.0, 4.0, 5.0, 6.0, 7.0), palette = "viridis", size = "num_first") +
+  tm_layout(main.title = "> 1 appearances", legend.outside = TRUE, main.title.size = 1.2)
+
+no_singletons
 
 no_doubletons = tm_shape(IL) + tm_polygons(alpha = 0.2) +
-  tm_shape(leading_wwtps_no_doubletons) + tm_dots(col = "population_served", palette = "viridis", size = "num_first") +
-  tm_layout(main.title = "> 2 appearances")
+  tm_shape(leading_wwtps_no_doubletons) + tm_dots(col = "log10_pop", breaks = c(3.0, 4.0, 5.0, 6.0, 7.0), palette = "viridis", size = "num_first") +
+  tm_layout(main.title = "> 2 appearances", legend.outside = TRUE, main.title.size = 1.2)
+
+no_doubletons
 
 no_tripletons = tm_shape(IL) + tm_polygons(alpha = 0.2) +
-  tm_shape(leading_wwtps_no_tripletons) + tm_dots(col = "population_served", palette = "viridis", size = "num_first") +
-  tm_layout(main.title = "> 3 appearances")
+  tm_shape(leading_wwtps_no_tripletons) + tm_dots(col = "log10_pop", breaks = c(3.0, 4.0, 5.0, 6.0, 7.0), palette = "viridis", size = "num_first") +
+  tm_layout(main.title = "> 3 appearances", legend.outside = TRUE)
 
 tmap_arrange(all_lineages, no_singletons, no_doubletons)
+
+all_lineages
 
 ggplot(leading_wwtps, aes(x = population_served, y = num_first)) + geom_point() + geom_smooth(method = "lm") +
   scale_x_log10() +
@@ -97,7 +110,12 @@ ggplot(leading_wwtps, aes(x = population_served, y = num_first)) + geom_point() 
   ylab("number of first detections") +
   theme_bw()
 
-pop_first_model <- lm(log(num_first) ~ log(population_served), data = leading_wwtps)
+ggplot(leading_wwtps, aes(x = (log(population_served))^2, y = num_first)) + geom_point() + geom_smooth(method = "lm") +
+  xlab("population served") +
+  ylab("number of first detections") +
+  theme_bw()
+
+pop_first_model <- lm(log(num_first) ~ poly(log(population_served), 2, raw = TRUE), data = leading_wwtps)
 summary(pop_first_model)
 plot(pop_first_model)
 
@@ -119,7 +137,7 @@ leading_wwtps_voc <- first_appearances_by_voc %>%
 
 tm_shape(IL) + tm_polygons(alpha = 0.2) +
   tm_shape(leading_wwtps_voc) + tm_dots(col = "log10_pop", breaks = c(3.0, 4.0, 5.0, 6.0, 7.0), palette = "viridis", size = "num_first") +
-  tm_layout(main.title = "Grouped to \nNamed Variants")
+  tm_layout(main.title = "First appearances of\nNamed VOCs/VOIs/VUMs", legend.outside = TRUE, main.title.size = 1)
 
 ################################################################################
 #Repeat analyses with different tax levels:
@@ -142,7 +160,7 @@ leading_wwtps_tier1 <- first_appearances_by_tier1 %>%
 
 tm_shape(IL) + tm_polygons(alpha = 0.2) +
   tm_shape(leading_wwtps_tier1) + tm_dots(col = "log10_pop", breaks = c(3.0, 4.0, 5.0, 6.0, 7.0), palette = "viridis", size = "num_first") +
-  tm_layout(main.title = "Grouped to Tier 1")
+  tm_layout(main.title = "Grouped to Lineage Prefix", legend.outside = TRUE, main.title.size = 1)
 
 
 #Second tier############################################
@@ -166,7 +184,7 @@ leading_wwtps_tier2 <- first_appearances_by_tier2 %>%
 
 tm_shape(IL) + tm_polygons(alpha = 0.2) +
   tm_shape(leading_wwtps_tier2) + tm_dots(col = "log10_pop", breaks = c(3.0, 4.0, 5.0, 6.0, 7.0), palette = "viridis", size = "num_first") +
-  tm_layout(main.title = "Grouped to Tier 2")
+  tm_layout(main.title = "Grouped to Tier 2", legend.outside = TRUE, main.title.size = 1)
 
 
 ################################################################################
@@ -176,3 +194,17 @@ first_loc_date <- ww_lin_data %>%
   summarize(first_date = min(sample_collect_date))
 
 
+
+################################################################################
+##Tables
+leading_wwtps %>%
+  arrange(desc(num_first)) %>%
+  head(15) %>%
+  select(wwtp_name, num_first) %>%
+  View()
+
+leading_wwtps_voc %>%
+  arrange(desc(num_first)) %>%
+  head(15) %>%
+  select(wwtp_name, num_first) %>%
+  View()
