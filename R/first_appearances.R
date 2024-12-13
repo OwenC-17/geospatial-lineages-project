@@ -186,6 +186,14 @@ tm_shape(IL) + tm_polygons(alpha = 0.2) +
   tm_shape(leading_wwtps_tier2) + tm_dots(col = "log10_pop", breaks = c(3.0, 4.0, 5.0, 6.0, 7.0), palette = "viridis", size = "num_first") +
   tm_layout(main.title = "Grouped to Tier 2", legend.outside = TRUE, main.title.size = 1)
 
+#Third tier################################################
+
+idph_ww_lin_data <- idph_ww_lin_data %>%
+  unite("top_lin_id", "sub1", "sub2", col = "tier3id", sep = ".", remove = FALSE, na.rm = TRUE)
+
+#Fourth tier###############################################
+idph_ww_lin_data <- idph_ww_lin_data %>%
+  unite("top_lin_id", "sub1", "sub2", "sub3", col = "tier4id", sep = ".", remove = FALSE, na.rm = TRUE)
 
 ################################################################################
 #Examine WRP-wise sampling intensity:
