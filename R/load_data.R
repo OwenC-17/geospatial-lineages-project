@@ -5,7 +5,9 @@ library(tidyverse)
 library(lubridate)
 
 long_ww_lin_w_sample_info <- read_csv(
-  "../cleaned-formatted-data/sequencing-results-formatted-cleaned.csv")
+  "../cleaned-formatted-data/sequencing-results-formatted-cleaned.csv",
+  guess_max = 1000000) #Must be longer than the number of rows or some data get
+                       #deleted due to incorrect type assignment
 
 enforce_types <- function(long_ww_lin_w_sample_info) {
   long_ww_lin_w_sample_info <- long_ww_lin_w_sample_info %>%

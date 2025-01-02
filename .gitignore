@@ -3,3 +3,7 @@ R/.Rproj.user/
 references/
 .Rhistory
 .Rproj.user
+input/lineages.csv
+input/cog_global_tree.newick
+input/cog_metadata.csv.gz
+input/cog_metadata.csv/cog_metadata.csv
