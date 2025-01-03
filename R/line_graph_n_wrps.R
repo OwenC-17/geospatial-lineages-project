@@ -6,7 +6,8 @@
 library(tidyverse)
 library(zoo)
 
-#We only want to visualize WRPs, so remove these:
+#We only want to visualize WRPs, so remove these.
+#(This list was last updated for May 2024 data).
 non_wrps <- c("MHOL23-00116", "SMH000072456", "SMH000111150", "SMH000116477", 
               "SMH000025183", "SMH000017048", "SMH000062398", "SMH000079342", 
               "CCJ - UNKNOWN ", "MHOL12-00024", "Schapers VA Home", 
@@ -18,7 +19,8 @@ non_wrps <- c("MHOL23-00116", "SMH000072456", "SMH000111150", "SMH000116477",
               "", NA)
 
 ##Note: dweek = number of weeks since start of sampling (2021-11-08), while
-##      weeks_since_start is the number of weeks since 2021-01-01. 
+##      weeks_since_start is the number of weeks since 2021-01-01.
+
 long_ww_lin_2 <- long_ww_lin_w_sample_info %>%
   filter(!is.na(sample_collect_date)) %>%
   mutate(dweek = as.numeric(sample_collect_date - min(sample_collect_date, 
