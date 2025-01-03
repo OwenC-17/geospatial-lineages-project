@@ -4,10 +4,11 @@
 
 library("tidyverse")
 library("zoo")
+library("lubridate")
 
 #Read in the data
 ################################################################################
-unf_ww <- read_csv("../input/2024-05-30-lineage-results.csv",
+unf_ww <- read_csv("../input/2025-01-03-lineage-results.csv",
                    col_types = "fffDdcccc--")
 
 
@@ -32,7 +33,7 @@ tablify_lineage_abundances <- function(dfrow) {
       mutate(sample_id = dfrow$sample_id, coverage = dfrow$coverage)
     return(df)
   } else {
-    message(linvec, " & ", abvec, " do not match")
+    message(row, ": ", linvec, " & ", abvec, " do not match")
   }
 }
 
@@ -61,8 +62,19 @@ rm(unf_ww) #This is big and we don't need it anymore
 #Read metadata file
 #(This file associates sample IDs to all the data besides lineage abundances,
 #including collection site, date, sample type, flow rate, temp etc.):
+
+#Old metadata:
 sample_metadata <- read_csv("../input/sample_metadata.csv",
                             col_types = "ff--ff-dDtD--Dccc--")
+
+#New metadata:
+sample_metadata2 <- read_csv("../input/sample_metadata_20250103.csv",
+                             col_types = "ff--ff-dDtD--Dccc--") %>%
+  filter(!is.na(sample_id))
+
+#These dates had typos that need to be fixed:
+sample_metadata2[(sample_metadata2$sample_id == "102619"), ]$sample_collect_date <- as.Date("2024-08-20")
+sample_metadata2[(sample_metadata2$sample_id == "105230"), ]$sample_collect_date <- as.Date("2024-10-16")
 
 #Format raw metadata:
 sample_metadata <- sample_metadata %>%
@@ -74,6 +86,60 @@ sample_metadata <- sample_metadata %>%
   mutate(week = week(sample_collect_date)) %>%
   mutate(weeks_to_add = ((year - 2021) * 52)) %>%
   mutate(weeks_since_start = week + weeks_to_add)
+
+
+#Some values in sample_arrival_temp have issues preventing conversion to
+#numeric values. Find and fix the issues:
+
+#Get unique temperature values:
+all_temps <- unique(sample_metadata2$sample_arrival_temp)
+#Find values that don't properly convert to numeric:
+weird_temps <- all_temps[is.na(as.numeric(all_temps))]
+weird_temps
+
+#Any string of consecutive dots or commas replaced with a single dot:
+weird2 <- str_replace_all(weird_temps, "\\.+|,+", ".")
+#For testing purposes, to be sure negative numbers won't be excluded:
+weird2[2] <- "-12.3." 
+weird2
+
+#Any characters that are not numeric or dots or minus signs removed
+#AND trailing dots removed:
+weird3 <- str_remove_all(weird2, "[^[:digit:]\\.-]|(\\.$)")
+weird3
+
+#Compare original weird temps to corrected values to make sure they behave as 
+#expected:
+data.frame(weird_temps, as.numeric(weird3))
+
+#Now fix the temperatures in the main data and make them numeric
+#(Note use of nested pipes!):
+sample_metadata2 <- sample_metadata2 %>%
+  mutate(sample_arrival_temp = sample_arrival_temp %>%
+           str_replace_all(pattern = "\\.+|,+",
+                           replacement = ".") %>%
+           str_remove_all("[^[:digit:]\\.-]|(\\.$)") %>%
+           as.double())
+
+#Create helpful alternative representations of dates:
+sample_metadata2 <- sample_metadata2 %>%
+  mutate(sample_received_date = as.Date(sample_received_date)) %>%
+  mutate(year = year(sample_collect_date)) %>%
+  filter(year != 1999) %>% #This will also remove samples with NA dates!
+  mutate(week = week(sample_collect_date)) %>%
+  mutate(days_since_start = sample_collect_date - min(sample_collect_date)) %>%
+  mutate(weeks_since_start = difftime(sample_collect_date,
+                                      min(sample_collect_date), 
+                                      units = "weeks") %>% floor()) %>%
+  mutate(sample_collect_datetime = paste(sample_collect_date, 
+                                         sample_collect_time) %>%
+           ymd_hms())
+
+
+#How to get weeks since sample start instead of since 2021-01-01?
+sample_metadata3 <- sample_metadata2 %>%
+  mutate(time_since_sample_start = sample_collect_date - min(sample_collect_date))
+min(sample_metadata2$sample_collect_date)
 
 #Merge redundant sample types (this exist due to inconsistent manual entries
 #into the LIMS):
