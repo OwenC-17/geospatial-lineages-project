@@ -25,7 +25,9 @@ enforce_types <- function(long_ww_lin_w_sample_info) {
            across(c("sample_collect_date", "sample_processed_date",
                     "test_result_date", "sample_received_date"), as_date),
            
-           across(c("year", "week", "weeks_to_add", 
+           across(c("sample_collect_datetime"), as_datetime, tz = "US/Central"),
+           
+           across(c("year", "week", "days_since_start",
                     "weeks_since_start"), as.integer)
            )
   return(long_ww_lin_w_sample_info)
