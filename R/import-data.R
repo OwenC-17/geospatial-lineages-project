@@ -67,7 +67,8 @@ rm(unf_ww) #This is big and we don't need it anymore
 sample_metadata <- read_csv("../input/sample_metadata.csv",
                             col_types = "ff--ff-dDtD--Dccc--")
 
-#New metadata:
+#New metadata (will generate a warning about an improperly formatted date, which
+#is resolved next):
 sample_metadata2 <- read_csv("../input/sample_metadata_20250103.csv",
                              col_types = "ff--ff-dDtD--Dccc--") %>%
   filter(!is.na(sample_id))
@@ -131,20 +132,16 @@ sample_metadata2 <- sample_metadata2 %>%
   mutate(weeks_since_start = difftime(sample_collect_date,
                                       min(sample_collect_date), 
                                       units = "weeks") %>% floor()) %>%
+  #In the following line, a warning will be caused by samples without collect
+  #times. This is fine.
   mutate(sample_collect_datetime = paste(sample_collect_date, 
                                          sample_collect_time) %>%
            ymd_hms())
 
-
-#How to get weeks since sample start instead of since 2021-01-01?
-sample_metadata3 <- sample_metadata2 %>%
-  mutate(time_since_sample_start = sample_collect_date - min(sample_collect_date))
-min(sample_metadata2$sample_collect_date)
-
-#Merge redundant sample types (this exist due to inconsistent manual entries
+#Merge redundant sample types (these exist due to inconsistent manual entries
 #into the LIMS):
-sample_metadata$sample_type <- case_match(
-  sample_metadata$sample_type,
+sample_metadata2$sample_type <- case_match(
+  sample_metadata2$sample_type,
   c("Grab sample", "grab", "Grab") ~ "grab",
   c("24-hr flow-weighted composite", "Flow-proportional 24-hr composite",
     "Volume-proportional 24-hr composite") ~ "flow_weighted_composite",
@@ -156,18 +153,18 @@ sample_metadata$sample_type <- case_match(
 
 #Merge redundant location names and make them nicer to read
 wwtp_names_dictionary <- read_csv("../input/wwtp_names_dictionary.csv")
-sample_metadata$nice_wwtp_name <- wwtp_names_dictionary$pretty_name[match(
-  sample_metadata$wwtp_name, wwtp_names_dictionary$wwtp_name)] %>%
+sample_metadata2$nice_wwtp_name <- wwtp_names_dictionary$pretty_name[match(
+  sample_metadata2$wwtp_name, wwtp_names_dictionary$wwtp_name)] %>%
   factor(ordered = FALSE)
 
 #Add the metadata to the lineage abundance table generated in previous
 #section:
 long_ww_lin_w_sample_info <- left_join(long_ww_lin,
-                                       sample_metadata,
+                                       sample_metadata2,
                                        by = "sample_id")
 
 #Cleanup
-rm(long_ww_lin, sample_metadata, wwtp_names_dictionary)
+rm(long_ww_lin, sample_metadata2, wwtp_names_dictionary)
 
 
 ###Format lineage names
@@ -200,7 +197,7 @@ long_ww_lin_w_sample_info <- long_ww_lin_w_sample_info %>%
 
 #This is just to confirm that the separate lineages combine properly (should
 #return 0).
-sum(unite(long_ww_lin_w_sample_info[,22:25], 
+sum(unite(long_ww_lin_w_sample_info[,23:26], 
           "combined", sep = ".", na.rm = TRUE)
     != long_ww_lin_w_sample_info$full_lineage_id)
 
@@ -255,11 +252,11 @@ long_ww_lin_w_sample_info <- long_ww_lin_3
 rm(long_ww_lin_3, aliases, alias_vector)
 
 
-###Identify named variants (e.g. VOCs and VOMs)
+###Identify named variants (e.g. VOCs and VUMs)
 ################################################################################
 
 #Import table of names:
-named_variants <- read.csv("../input/named_variants.csv")
+named_variants <- read.csv("../input/voc_voi_vum.csv")
 
 ##TO DO: get the variant names to not include "NA" in the pasted string!
 #unite(named_variants[2:3], "name_plus_alias", sep = " \\/ ", na.rm = TRUE)
@@ -285,19 +282,33 @@ rm(named_variants)
 
 #Add names for recombinant variants:
 for (x in seq_len(nrow(long_ww_lin_w_sample_info))) {
-  if (startsWith(long_ww_lin_w_sample_info$aliases_removed[x], "XBB") &
-      !startsWith(long_ww_lin_w_sample_info$aliases_removed[x], "XBB.1.5")) {
-        message(paste(long_ww_lin_w_sample_info$aliases_removed[x], "->",
-                      "Other XBB"))
-    long_ww_lin_w_sample_info$named_variant_id[x] <- "Other XBB"
+  lin = long_ww_lin_w_sample_info$aliases_removed[x]
+  if (str_starts(lin, "XBB\\.1\\.9\\.2(?![:digit:])")) {
+    message(paste(lin, "->", "XBB.1.9.2"))
+    long_ww_lin_w_sample_info$named_variant_id[x] <- "XBB.1.9.2"
+  } else if (str_starts(lin, "XBB\\.1\\.5(?![:digit:])")) {
+    message(paste(lin, "->", "XBB.1.5"))
+    long_ww_lin_w_sample_info$named_variant_id[x] <- "XBB.1.5"
+  } else if (str_starts(lin, "XBB(?![:alpha:])")) {
+    message(paste(lin, "->",  "XBB Other"))
+    long_ww_lin_w_sample_info$named_variant_id[x] <- "Other XBB lineage"
+  } else if (str_starts(lin, "XBF(?![:alpha:])")) {
+    message(paste(lin, "->",  "XBF"))
+    long_ww_lin_w_sample_info$named_variant_id[x] <- "XBF"
+  } else if (str_starts(lin, "XD(?![:alpha:])")) {
+    message(paste(lin, "->",  "XD"))
+    long_ww_lin_w_sample_info$named_variant_id[x] <- "XD"
+  } else if (str_starts(lin, "XE(?![:alpha:])")) {
+    message(paste(lin, "->",  "XE"))
+    long_ww_lin_w_sample_info$named_variant_id[x] <- "XE"
+  } else if (str_starts(lin, "XF(?![:alpha:])")) {
+    message(paste(lin, "->",  "XF"))
+    long_ww_lin_w_sample_info$named_variant_id[x] <- "XF"
+  } else if (str_starts(lin, "X")) {
+    message(paste(lin, "->",  "Other non-XBB recombinant"))
+    long_ww_lin_w_sample_info$named_variant_id[x] <- "Other non-XBB recombinant"
+  } 
   }
-  if (startsWith(long_ww_lin_w_sample_info$aliases_removed[x], "X") &
-      !startsWith(long_ww_lin_w_sample_info$aliases_removed[x], "XBB")) {
-        message(paste(long_ww_lin_w_sample_info$aliases_removed[x], "->",
-                      "Other X"))
-    long_ww_lin_w_sample_info$named_variant_id[x] <- "Other recombinant"
-  }
-}
 
 ###Export formatted data as csv
 ################################################################################

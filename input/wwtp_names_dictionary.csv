@@ -69,13 +69,18 @@ ELMHURST STP,Elmhurst STP,wwtp,
 Emerson Elementary School,Emerson Elementary School,building_outflow,*
 FLORA STP,Flora STP,wwtp,
 FOUR RIVERS SANITATION AUTHORITY,Four Rivers Sanitation Authority,wwtp,
+FOX METRO WATER RECLAMATION DISTRICT,Fox Metro WRD WWTP,wwtp,
 FOX METRO WRD WWTP,Fox Metro WRD WWTP,wwtp,
-Freedom Middle School,Freedom Miidle School,building_outflow,
+FOX RIVER WRD - ALBIN D PAGORSKI WRF,Fox River WRD Albin D. Pagorski WRF,wwtp,
+FOX RIVER WRD - NORTH WRF,Fox River WRD North WRF,wwtp,
+FOX RIVER WRD - WEST WRF,Fox River WRD West WRF,wwtp,
+Freedom Middle School,Freedom Middle School,building_outflow,
 FREEPORT WWTF,Freeport WWTF,wwtp,
 GALENA SOUTH STP,Gamena South STP,wwtp,
 Galesburg Sample Site,Galesburg Sample Site,UNKNOWN,*
 GALESBURG SD STP,Galesburg SD STP,wwtp,
 GLENBARD WASTEWATER AUTHORITY - MAIN WWTP,Glenbard Wastewater Authority Main WWTP,wwtp,
+GREAT LAKES NAVAL,Naval Station Great Lakes,UNKNOWN,*
 Gurnee Interceptor,Gurnee Interceptor,interceptor,
 Hall High School,Hall High School,building_outflow,
 Hillside Elementary School,Hillside Elementary School,building_outflow,
@@ -95,6 +100,7 @@ Madison Elementary School – Drop-off,Madison Elementary School Drop-Off,buildi
 Markword VA Home,Markword VA Home,building_outflow,
 Marseilles Elementary School,Marseilles Elementary School,building_outflow,
 McAuley – Misericordia,McAuley Misericordia,building_outflow,
+McCormick,McCormick Place,building_outflow,*
 METROPOLITAN WRDGC-KIRIE,MWRD Kirie WRP,wwtp,
 MH 10420,Manhole 10420,sewer,
 MH 10422,Manhole 10422,sewer,
@@ -118,6 +124,7 @@ MWRDGC LEMONT WRP,MWRD Lemont WRP,wwtp,
 MWRDGC STICKNEY WRP - SWS(N/S),MWRD Stickney WRP SWS,wwtp,
 MWRDGC STICKNEY WRP - WS,MWRD Stickney WRP WS,wwtp,
 MWRDGC TERRENCE J O'BRIEN WTR RECLAMATION PLANT,MWRD O'Brien WRP,wwtp,
+MWRDGC TERRENCE J OBRIEN WTR RECLAMATION PLANT,MWRD O'Brien WRP,wwtp,
 NAPERVILLE SPRINGBROOK WRC,Naperville Springbrook WRC,wwtp,
 NASHVILLE STP,Nashville STP,wwtp,
 NORTHERN MORAINE WW RECLAMATION DIST WWTP,Northern Moraine WRD WWTP,wwtp,
@@ -159,6 +166,7 @@ UI0144_Orchard_Downs,UIUC 0144 Orchard Downs,building_outflow,
 UI1126_Rsch_Park,UIUC 1126 Research Park,building_outflow,
 UI1611_Armory_Ave,UIUC Armory Ave,building_outflow,
 UI2275_Matthews_Ave,UIUC Matthews Ave,building_outflow,
+United Center,United Center,building_outflow,*
 Upper Salt Creek 1,Upper Salt Creek 1,sewer,*
 Upper Salt Creek 10,Upper Salt Creek 10,sewer,*
 Upper Salt Creek 11,Upper Salt Creek 11,sewer,*
