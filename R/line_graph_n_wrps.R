@@ -18,28 +18,31 @@ non_wrps <- c("MHOL23-00116", "SMH000072456", "SMH000111150", "SMH000116477",
               "CCJ- Division 2", "CCJ- Division 10", "CCJ- Division 6 (South)", 
               "", NA)
 
+wwtp_names_dictionary <- read_csv("../input/wwtp_names_dictionary.csv")
+
+long_ww_lin_w_sample_info$site_type <- wwtp_names_dictionary$site_type[match(
+  long_ww_lin_w_sample_info$wwtp_name, wwtp_names_dictionary$wwtp_name)] %>%
+  factor(ordered = FALSE)
+
 ##Note: dweek = number of weeks since start of sampling (2021-11-08), while
 ##      weeks_since_start is the number of weeks since 2021-01-01.
 
 long_ww_lin_2 <- long_ww_lin_w_sample_info %>%
-  filter(!is.na(sample_collect_date)) %>%
-  mutate(dweek = as.numeric(sample_collect_date - min(sample_collect_date, 
-                                                      na.rm = TRUE)) %/% 7)
+  filter(!is.na(sample_collect_date))
 
 ww_spread <- long_ww_lin_2 %>%
-  filter(!(wwtp_name %in% non_wrps)) %>%
-  group_by(aliases_removed, dweek) %>%
+  filter(site_type == "wwtp") %>%
+  group_by(aliases_removed, weeks_since_start) %>%
   summarize(number = length(unique(wwtp_name)))
 
 voc_ww_spread <- long_ww_lin_2 %>%
-  filter(!(wwtp_name %in% non_wrps)) %>%
-  group_by(named_variant_id, dweek) %>%
+  filter(site_type == "wwtp") %>%
+  group_by(named_variant_id, weeks_since_start) %>%
   summarize(number = length(unique(wwtp_name)))
 
 library(RColorBrewer)
-colors = c(brewer.pal(n = 12, name="Set3"), brewer.pal(n = 8, name = "Set2"), brewer.pal(n = 9, name = "Set1"))
-ggplot(voc_ww_spread, aes(x = dweek, y = rollmean(number, 3, na.pad = T), color = named_variant_id)) + geom_line(size = 1) +
-  scale_color_manual(values = colors) +
+colors = c(brewer.pal(n = 12, name="Set3"), brewer.pal(n = 8, name = "Set2"), brewer.pal(n = 9, name = "Set1"), brewer.pal(n = 12, name = "Set3"), brewer.pal(n = 8, name = "Set2"))
+ggplot(ww_spread, aes(x = weeks_since_start, y = rollmean(number, 3, na.pad = T), color = aliases_removed)) + geom_line(size = 1) +
   labs(color = "Variant name") +
   theme_minimal() +
   xlab("Weeks since Nov 8 2021") +
