@@ -1,3 +1,4 @@
+library(tidyverse)
 library(ape)
 
 sc2_tree <- read.tree("../input/cog_global_tree.newick")
@@ -8,20 +9,38 @@ sc2_tree <- read.tree("../input/cog_global_tree.newick")
 cog_metadata <- read_csv("../input/cog_metadata.csv/cog_metadata.csv")
 head(cog_metadata)
 
-lineages_not_in_cog_meta <- long_ww_lin_w_sample_info %>%
+full_lineages_not_in_cog_meta <- idph_ww_lin_data %>%
   select(full_lineage_id, aliases_removed, named_variant_id) %>%
   distinct() %>%
-  filter(!(full_lineage_id %in% cog_metadata$lineage))
+  filter(!(full_lineage_id %in% cog_metadata$lineage | aliases_removed %in% cog_metadata$lineage))
 
+t3_lineages_not_in_cog_meta <- idph_ww_lin_data %>%
+  select(full_lineage_id, tier3id, tier2id, top_lin_id, aliases_removed, named_variant_id) %>%
+  distinct() %>%
+  filter(!(tier3id %in% cog_metadata$lineage | aliases_removed %in% cog_metadata$lineage | full_lineage_id %in% cog_metadata$lineage))
+
+t2_lineages_not_in_cog_meta <- idph_ww_lin_data %>%
+  select(full_lineage_id, tier3id, tier2id, top_lin_id, aliases_removed, named_variant_id) %>%
+  distinct() %>%
+  filter(!(tier2id %in% cog_metadata$lineage | aliases_removed %in% cog_metadata$lineage | full_lineage_id %in% cog_metadata$lineage))
+
+any_level_lineages_not_in_cog_meta <- idph_ww_lin_data %>%
+  select(full_lineage_id, tier4id, tier3id, tier2id, top_lin_id, aliases_removed, named_variant_id) %>%
+  distinct() %>%
+  filter(!(top_lin_id %in% cog_metadata$lineage | aliases_removed %in% cog_metadata$lineage | full_lineage_id %in% cog_metadata$lineage
+           | tier2id %in% cog_metadata$lineage | tier3id %in% cog_metadata$lineage | tier4id %in% cog_metadata$lineage))
 
 str(cog_metadata)
 
-sum(lineages_not_in_cog_meta$full_lineage_id %in% cog_metadata$scorpio_call)
 
-str_detect(cog_metadata$scorpio_call, lineages_not_in_cog_meta$full_lineage_id)
+big_string <- str_c(full_lineages_not_in_cog_meta$full_lineage_id, collapse = "|")
 
-big_string <- str_c(lineages_not_in_cog_meta$full_lineage_id, collapse = "|")
+sum(str_detect(cog_metadata$lineage, big_string), na.rm = TRUE)
 
-sum(str_detect(cog_metadata$scorpio_call, big_string), na.rm = TRUE)
+b117s <- str_subset(cog_metadata$lineage, "B\\.1\\.1\\.7")
+b117s <- data.frame(b117s) %>%
+  filter(!is.na(b117s))
+unique(b117s$b117s)
 
-str_extract(cog_metadata$lineage, "B\\.1\\.1\\.7")
+
+pango_designation_lineages <- read_csv("../input/lineages.csv")
