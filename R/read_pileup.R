@@ -45,7 +45,7 @@ whole_table <- data.frame(row.names = "count", "prop")
 
 #######
 rm(pileup_muts)
-setwd("C:/Users/fanta/Dropbox/PC (2)/Documents/ClinicalVsWW/pileups/Stephanie_New_Pileups_Folder/230503_pileups/")
+setwd("../input/pileups/Stephanie_New_Pileups_Folder/230503_pileups/")
 for (data in list.files()){ #List files in current directory as "data"
   # Create the initial df if none exists yet
   if (!exists("pileup_muts")){ 
