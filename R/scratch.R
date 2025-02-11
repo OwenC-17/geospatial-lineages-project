@@ -12,3 +12,59 @@ has_date <- filter(long_ww_lin_w_sample_info, !is.na(sample_collect_date))
 
 sum(!unique(without_date$sample_id) %in% unique(has_date$sample_id))
 unique(without_date$sample_id)
+
+
+idph_ww_lin_data
+
+
+weird_subset <- sample_metadata2[sample_metadata2$sample_id == "102620", ]
+rm(weird_subset)
+weird_subset2 <- na_remove[na_remove$sample_id == "102620", ]
+rm(weird_subset2)
+na_remove <- sample_metadata2[!is.na(sample_metadata2$sample_id),]
+rm(na_remove)
+na_metada <- sample_metadata2[is.na(sample_metadata2$sample_id),]
+rm(na_metada)
+
+all_temps <- unique(sample_metadata2$sample_arrival_temp)
+weird_temp_ind <- str_which(all_temps, pattern = "^-?[:digit:]+\\.?[:digit:]*$", negate = TRUE)
+
+weird_temps <- all_temps[weird_temp_ind]
+weird_temps
+
+#Any string of consecutive dots or commas replaced with a single dot:
+weird2 <- str_replace_all(weird_temps, "\\.+|,+", ".")
+weird2[1] <- "-12.3." #for testing purposes
+weird2
+
+#Any characters that are not numeric or dots or minus signs removed
+#AND trailing dots removed:
+weird3 <- str_remove_all(weird2, "[^[:digit:]\\.-]|(\\.$)")
+weird3
+data.frame(weird_temps, as.numeric(weird3))
+
+as.numeric(all_temps[-weird_temp_ind])
+
+sample_metadata_exp <- read_csv("../input/sample_metadata_20250103.csv", guess_max = 10000000)
+
+weird_years <- sample_metadata2[sample_metadata2$year < 2020, ]
+
+NEW_WWTPS <- sample_metadata2[!(sample_metadata2$wwtp_name %in% wwtp_names_dictionary$wwtp_name),]
+
+RECOMBINANT_ONLY <- long_ww_lin_w_sample_info[str_starts(long_ww_lin_w_sample_info$full_lineage_id, "X"),]
+RECOMBINANT_SUMMARY <- table(RECOMBINANT_ONLY$full_lineage_id, RECOMBINANT_ONLY$named_variant_id) %>% data.frame() %>%
+  filter(Freq > 0) %>%
+  mutate(beginning = str_sub(Var1, 1, 7))
+
+BEGINNING_RECOMBINANT <- RECOMBINANT_SUMMARY %>%
+  group_by(beginning) %>%
+  summarize(noccurences = sum(Freq))
+
+
+library(microbenchmark)
+?microbenchmark
+
+microbenchmark(
+  base::strsplit(test_result_2, "", fixed = TRUE),
+  base::strsplit(test_result_2, "")
+)
