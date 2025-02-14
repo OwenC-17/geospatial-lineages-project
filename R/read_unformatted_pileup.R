@@ -80,6 +80,30 @@ detect_deletions <- function(map_result) {
   return(temp)
 }
 
+remove_zero_qual <- function(map_result, qual) {
+  #All other prepocessing must be performed first. Check:
+  if (any(nchar(map_result) != nchar(qual))) {
+    warning("Number of quality scores does not match number of bases. 
+            Preprocessing may be necessary.") 
+  }
+  
+  #The zero-quality character is an exclamation point. Find their locations:
+  zero_score_indices <- str_locate_all(qual, "!")[[1]][, 1]
+  
+  
+  if (length(zero_score_indices) > 0) {
+    #Split read result into a vector of single characters, then remove those
+    #with indices matchin zero-quality scores:
+    zeroes_removed <- strsplit(map_result, "")[[1]][-zero_score_indices] %>%
+      unlist() %>%
+      str_flatten()
+    return(zeroes_removed)
+  }
+  else {
+    return(map_result)
+  }
+}
+
 import_pileup <- function(unformatted_pileup_table) {
   prepared_pileup_table <- unformatted_pileup_table %>%
   
@@ -94,35 +118,47 @@ import_pileup <- function(unformatted_pileup_table) {
     mutate(formatted_read_results = mapply(detect_inserts, formatted_read_results)) %>%
     
     #Remove deletions
-    mutate(formatted_read_results = mapply(detect_deletions, formatted_read_results))
-  #Remove zero quality bases
+    mutate(formatted_read_results = mapply(detect_deletions, formatted_read_results)) %>%
 
+    #Remove zero quality bases
+    mutate(formatted_read_results = mapply(remove_zero_qual, formatted_read_results, qual_without_gaps)) %>%
+
+    #Remove zeros from quality scores as well:
+    mutate(qual_without_gaps = str_remove_all(qual_without_gaps, "\\!")) %>%
+  
+    #Update coverage so it doesn't include zero-quality bases:
+    mutate(coverage_no_zero_qual = str_length(formatted_read_results))
+  
   return(prepared_pileup_table)
 }
 
 
-import_test_1 <- import_pileup(pileup_table)
+meanPhred <- function(phred_string, offset = 33) {
+  mean_quality <- phred_string %>%
+    charToRaw() %>%
+    as.numeric() %>%
+    mean()
+  
+  return(mean_quality - offset)
+}
 
-import_test_2 <- import_pileup(pileup_table2)
+sdPhred <- function(phred_string) {
+  sd_quality <- phred_string %>%
+    charToRaw %>%
+    as.numeric %>%
+    sd()
+  
+  return(sd_quality)
+}
 
-import_test_2 <- import_pileup(pileup_test_examples)
+calculate_quality_statistics <- function(formatted_pileup_table) {
+  new_table <- formatted_pileup_table %>%
+    mutate(mean_quality = mapply(meanPhred, qual_without_gaps)) %>%
+    mutate(sd_quality = mapply(sdPhred, qual_without_gaps))
+  
+  return(new_table)
+}
 
-import_test_3 <- import_pileup(pileup_table3)
 
-problematic_rows_2 <- import_test_2[str_length(import_test_2$formatted_read_results) != str_length(import_test_2$qual_without_gaps),]
-problematic_rows_3 <- import_test_3[str_length(import_test_3$formatted_read_results) != str_length(import_test_3$qual_without_gaps),]
-problematic_rows_3b <- import_test_3[str_length(import_test_3$formatted_read_results) != import_test_3$coverage,] 
 
-problematic_rows$diffs <- str_length(problematic_rows$bases_only) - problematic_rows$count
-
-del_example_2 <- as.character("!,,,,,,,,,,-12acgfacfgafgcnnnn.......-3acd..")
-
-dels <- data.frame(str_match_all(del_example_2, "-(\\d+)([:alpha:]+)"))
-
-dels$name <- paste0("DEL_", substr(dels$X3, 1, dels$X2))
-dels
-
-table(dels$name)
-
-substr(del_example_2, start = 1, stop = 10)
 
