@@ -14,11 +14,20 @@ pileup_table2 <- read_tsv("../input/pileups/105300_S75.pileup",
                                        "coverage", "read_results", "quality"),
                          col_types = "cicicc")
 
+pileup_table3 <- read_tsv("../input/pileups/100284_S68.pileup", 
+                          col_names = c("ref", "position", "refbase", 
+                                        "coverage", "read_results", "quality"),
+                          col_types = "cicicc")
+
+
+
 pileup_test_examples <- read_tsv("../input/pileups/test_examples.pileup.txt", 
                           col_names = c("ref", "position", "refbase", 
                                         "coverage", "read_results", "quality"),
                           col_types = "cicicc")
 
+
+pileup_test_examples$read_results[1] <- "..<..>>...^<..."
 
 sum(str_detect(pileup_table2$read_results, "<"))
 
