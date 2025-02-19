@@ -68,3 +68,48 @@ microbenchmark(
   base::strsplit(test_result_2, "", fixed = TRUE),
   base::strsplit(test_result_2, "")
 )
+
+
+pileup_table <- read_tsv("../input/pileups/BL2_S96.pileup", 
+                         col_names = c("ref", "position", "refbase", 
+                                       "coverage", "read_results", "quality"))
+
+pileup_table2 <- read_tsv("../input/pileups/105300_S75.pileup", 
+                          col_names = c("ref", "position", "refbase", 
+                                        "coverage", "read_results", "quality"),
+                          col_types = "cicicc")
+
+pileup_table3 <- read_tsv("../input/pileups/100284_S68.pileup", 
+                          col_names = c("ref", "position", "refbase", 
+                                        "coverage", "read_results", "quality"),
+                          col_types = "cicicc")
+
+import_test_1 <- import_pileup(pileup_table)
+
+import_test_2 <- import_pileup(pileup_table2)
+
+import_test_2 <- import_pileup(pileup_test_examples)
+
+import_test_3 <- import_pileup(pileup_table3)
+
+problematic_rows_2 <- import_test_2[str_length(import_test_2$formatted_read_results) != str_length(import_test_2$qual_without_gaps),]
+problematic_rows_3 <- import_test_3[str_length(import_test_3$formatted_read_results) != str_length(import_test_3$qual_without_gaps),]
+problematic_rows_3b <- import_test_3[str_length(import_test_3$formatted_read_results) != import_test_3$coverage_no_zero_qual,] 
+problematic_rows_3c <- import_test_3 %>%
+  mutate(count0qual = str_count(quality, "\\!")) %>%
+  filter(coverage != str_length(formatted_read_results) + count0qual)
+
+problematic_rows$diffs <- str_length(problematic_rows$bases_only) - problematic_rows$count
+
+del_example_2 <- as.character("!,,,,,,,,,,-12acgfacfgafgcnnnn.......-3acd..")
+
+dels <- data.frame(str_match_all(del_example_2, "-(\\d+)([:alpha:]+)"))
+
+dels$name <- paste0("DEL_", substr(dels$X3, 1, dels$X2))
+dels
+
+table(dels$name)
+
+substr(del_example_2, start = 1, stop = 10)
+
+sum(str_count(import_test_3$formatted_read_results, "\\*"))
