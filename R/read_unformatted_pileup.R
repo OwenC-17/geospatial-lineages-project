@@ -159,6 +159,9 @@ calculate_quality_statistics <- function(formatted_pileup_table) {
   return(new_table)
 }
 
-
+is_conserved <- function(formatted_seq_result) {
+  conserved = str_detect(formatted_seq_result, "[^\\.,]", negate = TRUE)
+  return(conserved)
+}
 
 

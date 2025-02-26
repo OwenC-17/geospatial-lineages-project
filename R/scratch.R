@@ -87,10 +87,15 @@ pileup_table3 <- read_tsv("../input/pileups/100284_S68.pileup",
 import_test_1 <- import_pileup(pileup_table)
 
 import_test_2 <- import_pileup(pileup_table2)
+import_test_2 <- import_test_2 %>%
+  mutate(conserved = mapply(is_conserved, formatted_read_results))
 
-import_test_2 <- import_pileup(pileup_test_examples)
+
+#import_test_example <- import_pileup(pileup_test_examples)
 
 import_test_3 <- import_pileup(pileup_table3)
+import_test_3 <- import_test_3 %>%
+  mutate(conserved = mapply(is_conserved, formatted_read_results))
 
 problematic_rows_2 <- import_test_2[str_length(import_test_2$formatted_read_results) != str_length(import_test_2$qual_without_gaps),]
 problematic_rows_3 <- import_test_3[str_length(import_test_3$formatted_read_results) != str_length(import_test_3$qual_without_gaps),]
