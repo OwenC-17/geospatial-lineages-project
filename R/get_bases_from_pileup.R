@@ -53,7 +53,7 @@ ref_bases <- c("A", "C", "G", "T")
 # Define a function to check each base
 check_base <- function(row, base) {
   if (import_test_3$refbase[row] == base) {
-    return(import_test_3$coverage_no_zero_qual[row])
+    return(str_count(import_test_3$formatted_read_results[row], "[\\.,]"))
   } else {
     return(str_count(toupper(import_test_3$formatted_read_results[row]), base))
   }
